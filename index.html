@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telugu Reading Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #faf8f3;
+      color: #1c1c1c;
+      min-height: 100vh;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #e2d9c8;
+    }
+
+    .title-te {
+      font-family: 'Noto Sans Telugu', sans-serif;
+      font-size: 1.6rem;
+      color: #4a3000;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #aaa;
+      font-style: italic;
+    }
+
+    .story {
+      font-family: 'Noto Sans Telugu', sans-serif;
+      font-size: 22px;
+      line-height: 3em;
+      color: #111;
+    }
+
+    .word {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      border-radius: 3px;
+      padding: 0 1px;
+      transition: background-color 0.12s ease;
+    }
+
+    .word:hover {
+      background-color: rgba(150, 100, 10, 0.09);
+    }
+
+    .phonetic {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      font-family: Georgia, serif;
+      color: #8a6000;
+      white-space: nowrap;
+      pointer-events: none;
+      line-height: 1;
+      padding-bottom: 3px;
+    }
+
+    .phonetic.hidden {
+      display: none;
+    }
+
+    footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-te">తెలుగు చదవండి</div>
+      <p class="subtitle">Click any word to reveal its pronunciation &middot; Click again to hide</p>
+    </header>
+    <div id="story" class="story"></div>
+    <footer>Telugu Reading Practice</footer>
+  </div>
+
+  <script>
+    const STORY = `సుందరవనంలో ఓ నక్క ఉండేది. దానికి స్వార్థం చాలా ఎక్కువ. అడవిలో ఉండే జంతువులకు ఎప్పుడూ తప్పుడు సలహాలు ఇస్తుండేది. దాని గురించి తెలియని చాలా జంతువులు మోసపోయేవి. ఒకసారి అది అడవిలో తిరుగుతూ, విశ్రాంతి తీసుకుందామని ఓ మామిడి చెట్టు కింద కూర్చుంది. అప్పుడే అక్కడికి ఆకలితో ఉన్న ఓ కోతి వచ్చింది. ఆ చెట్టు చిటారు కొమ్మన రెండే పండ్లు ఉన్నాయి. 'హమ్మయ్యా! వెతుక్కుంటూ ఇంత దూరం వచ్చినందుకు ఆహారం దొరికింది. ఆ పండ్లు కోసుకుని తినేస్తా!' అనుకుంది. మెల్లగా చెట్టు ఎక్కబోతోంది. అప్పుడు నక్క.. 'ఎందుకు అంత శ్రమపడతావు. అదుగో అక్కడున్న కర్ర తీసుకుని కొడితే ఆ పండ్లు కింద పడతాయి. ఎంచక్కా తినేయొచ్చు' అంది. 'భలే సలహా ఇచ్చావు..' అంటూ కర్ర తీసుకుని కొట్టింది కోతి. దాంతో ఆ రెండు మామిడి పండ్లు పక్కనే ఉన్న కొలనులో పడ్డాయి.`;
+
+    // ── Transliteration ──────────────────────────────────────────────────────
+
+    const INDEPENDENT_VOWELS = {
+      'అ': 'a',  'ఆ': 'ā',  'ఇ': 'i',  'ఈ': 'ī',  'ఉ': 'u',  'ఊ': 'ū',
+      'ఋ': 'ru', 'ౠ': 'rū', 'ఎ': 'e',  'ఏ': 'ē',  'ఐ': 'ai',
+      'ఒ': 'o',  'ఓ': 'ō',  'ఔ': 'au'
+    };
+
+    const MATRAS = {
+      'ా': 'ā',  'ి': 'i',  'ీ': 'ī',  'ు': 'u',  'ూ': 'ū',
+      'ృ': 'ru', '\u0C44': 'rū',
+      'ె': 'e',  'ే': 'ē',  'ై': 'ai', 'ొ': 'o',  'ో': 'ō',  'ౌ': 'au'
+    };
+
+    const CONSONANTS = {
+      'క': 'k',   'ఖ': 'kh',  'గ': 'g',   'ఘ': 'gh',  'ఙ': 'ṅ',
+      'చ': 'c',   'ఛ': 'ch',  'జ': 'j',   'ఝ': 'jh',  'ఞ': 'ñ',
+      'ట': 'ṭ',   'ఠ': 'ṭh', 'డ': 'ḍ',   'ఢ': 'ḍh', 'ణ': 'ṇ',
+      'త': 't',   'థ': 'th',  'ద': 'd',   'ధ': 'dh',  'న': 'n',
+      'ప': 'p',   'ఫ': 'ph',  'బ': 'b',   'భ': 'bh',  'మ': 'm',
+      'య': 'y',   'ర': 'r',   'ల': 'l',   'వ': 'v',
+      'శ': 'ś',   'ష': 'ṣ',   'స': 's',   'హ': 'h',
+      'ళ': 'ḷ',   'ఱ': 'rr'
+    };
+
+    // Consonant classes for anusvara (ం) nasal assimilation
+    const VELAR_SET    = new Set(['\u0C15','\u0C16','\u0C17','\u0C18','\u0C19']); // క ఖ గ ఘ ఙ
+    const PALATAL_SET  = new Set(['\u0C1A','\u0C1B','\u0C1C','\u0C1D','\u0C1E']); // చ ఛ జ ఝ ఞ
+    const RETROFLEX_SET= new Set(['\u0C1F','\u0C20','\u0C21','\u0C22','\u0C23','\u0C33','\u0C31']); // ట ఠ డ ఢ ణ ళ ఱ
+    const LABIAL_SET   = new Set(['\u0C2A','\u0C2B','\u0C2C','\u0C2D','\u0C2E']); // ప ఫ బ భ మ
+
+    const DIGITS = {
+      '౦': '0', '౧': '1', '౨': '2', '౩': '3', '౪': '4',
+      '౫': '5', '౬': '6', '౭': '7', '౮': '8', '౯': '9'
+    };
+
+    const VIRAMA   = '\u0C4D'; // ్
+    const ANUSVARA = '\u0C02'; // ం
+    const VISARGA  = '\u0C03'; // ః
+
+    function transliterate(text) {
+      let result = '';
+      let i = 0;
+      const n = text.length;
+
+      while (i < n) {
+        const ch = text[i];
+
+        // Compound consonant: క్ష → kṣa
+        if (ch === 'క' && text[i + 1] === VIRAMA && text[i + 2] === 'ష') {
+          i += 3;
+          if (MATRAS[text[i]] !== undefined) {
+            result += 'kṣ' + MATRAS[text[i++]];
+          } else if (text[i] === VIRAMA) {
+            result += 'kṣ'; i++;
+          } else {
+            result += 'kṣa';
+          }
+          continue;
+        }
+
+        if (CONSONANTS[ch] !== undefined) {
+          const base = CONSONANTS[ch];
+          i++;
+          // Look ahead for matra or virama
+          if (MATRAS[text[i]] !== undefined) {
+            result += base + MATRAS[text[i++]];
+          } else if (text[i] === VIRAMA) {
+            result += base; i++; // suppress inherent 'a'
+          } else {
+            result += base + 'a'; // inherent vowel
+          }
+        } else if (INDEPENDENT_VOWELS[ch] !== undefined) {
+          result += INDEPENDENT_VOWELS[ch];
+          i++;
+        } else if (ch === ANUSVARA) {
+          // Nasal assimilates to the place of articulation of the following consonant
+          const next = text[i + 1];
+          if      (next && RETROFLEX_SET.has(next)) result += 'ṇ';
+          else if (next && PALATAL_SET.has(next))   result += 'ñ';
+          else if (next && VELAR_SET.has(next))     result += 'ṅ';
+          else if (next && LABIAL_SET.has(next))    result += 'm';
+          else if (next && CONSONANTS[next] !== undefined) result += 'n';
+          else                                      result += 'ṁ'; // word-final
+          i++;
+        } else if (ch === VISARGA) {
+          result += 'ḥ';
+          i++;
+        } else if (DIGITS[ch] !== undefined) {
+          result += DIGITS[ch];
+          i++;
+        } else {
+          result += ch; // punctuation, spaces, unrecognized
+          i++;
+        }
+      }
+
+      return result;
+    }
+
+    // ── Rendering ────────────────────────────────────────────────────────────
+
+    function togglePhonetic(span) {
+      span.querySelector('.phonetic').classList.toggle('hidden');
+    }
+
+    function renderStory(text) {
+      const container = document.getElementById('story');
+      // Split into runs of Telugu characters vs. everything else
+      const tokens = text.match(/[\u0C00-\u0C7F]+|[^\u0C00-\u0C7F]+/g) || [];
+
+      for (const token of tokens) {
+        if (/[\u0C00-\u0C7F]/.test(token)) {
+          const span = document.createElement('span');
+          span.className = 'word';
+          span.addEventListener('click', () => togglePhonetic(span));
+
+          const label = document.createElement('span');
+          label.className = 'phonetic hidden';
+          label.textContent = transliterate(token);
+
+          span.appendChild(label);
+          span.appendChild(document.createTextNode(token));
+          container.appendChild(span);
+        } else {
+          container.appendChild(document.createTextNode(token));
+        }
+      }
+    }
+
+    renderStory(STORY);
+  </script>
+</body>
+</html>
