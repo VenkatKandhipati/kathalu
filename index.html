@@ -14,6 +14,10 @@
       padding: 0;
     }
 
+    :root {
+      --story-font-size: 1.25rem;
+    }
+
     body {
       background: #e8e4dd;
       color: #2c2c2c;
@@ -21,6 +25,19 @@
       font-family: 'Noto Serif Telugu', 'Noto Sans Telugu', Georgia, serif;
       display: flex;
       flex-direction: column;
+    }
+
+    /* ── Progress Bar ────────────────────────────────────────── */
+
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: #b5531a;
+      width: 0%;
+      z-index: 20;
+      transition: width 0.1s linear;
     }
 
     /* ── Top Nav Bar ─────────────────────────────────────────── */
@@ -84,6 +101,25 @@
     .nav-btn svg {
       width: 20px;
       height: 20px;
+    }
+
+    .font-size-btn {
+      background: none;
+      border: 1px solid #b5b0a6;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #666;
+      padding: 0.15rem 0.45rem;
+      font-family: Georgia, serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .font-size-btn:hover {
+      color: #333;
+      background: rgba(0,0,0,0.05);
     }
 
     /* ── Page Content ────────────────────────────────────────── */
@@ -150,7 +186,7 @@
 
     .story {
       font-family: 'Noto Serif Telugu', 'Noto Sans Telugu', serif;
-      font-size: 1.25rem;
+      font-size: var(--story-font-size);
       line-height: 2.6;
       color: #2a2a2a;
       text-align: left;
@@ -266,7 +302,7 @@
       .page-wrapper { padding: 1rem 0; }
 
       .story {
-        font-size: 1.1rem;
+        font-size: var(--story-font-size);
         line-height: 2.4;
       }
 
@@ -277,6 +313,9 @@
 </head>
 <body>
 
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progressBar"></div>
+
   <!-- Top Navigation -->
   <nav class="navbar">
     <div class="nav-left">
@@ -285,6 +324,8 @@
     </div>
     <div class="nav-title">తెలుగు కథలు</div>
     <div class="nav-right">
+      <button class="font-size-btn" id="fontDecBtn" title="Decrease font size">A−</button>
+      <button class="font-size-btn" id="fontIncBtn" title="Increase font size">A+</button>
       <button class="nav-btn" id="toggleAllBtn" title="Show/hide all transliterations">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
@@ -552,9 +593,54 @@
       if (currentIndex < STORIES.length - 1) loadStory(currentIndex + 1);
     });
 
+    // ── Font Size Controls ─────────────────────────────────────────────────
+
+    const FONT_MIN = 0.9;
+    const FONT_MAX = 2.0;
+    const FONT_STEP = 0.1;
+    const FONT_DEFAULT = 1.25;
+
+    function getStoredFontSize() {
+      const stored = parseFloat(localStorage.getItem('storyFontSize'));
+      return (stored >= FONT_MIN && stored <= FONT_MAX) ? stored : FONT_DEFAULT;
+    }
+
+    function applyFontSize(size) {
+      document.documentElement.style.setProperty('--story-font-size', size + 'rem');
+      localStorage.setItem('storyFontSize', size);
+    }
+
+    let currentFontSize = getStoredFontSize();
+    applyFontSize(currentFontSize);
+
+    document.getElementById('fontDecBtn').addEventListener('click', () => {
+      currentFontSize = Math.max(FONT_MIN, +(currentFontSize - FONT_STEP).toFixed(2));
+      applyFontSize(currentFontSize);
+    });
+
+    document.getElementById('fontIncBtn').addEventListener('click', () => {
+      currentFontSize = Math.min(FONT_MAX, +(currentFontSize + FONT_STEP).toFixed(2));
+      applyFontSize(currentFontSize);
+    });
+
+    // ── Story Progress Bar ──────────────────────────────────────────────────
+
+    const progressBar = document.getElementById('progressBar');
+
+    function updateProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+      progressBar.style.width = progress + '%';
+    }
+
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress, { passive: true });
+
     // ── Init ─────────────────────────────────────────────────────────────────
 
     loadStory(currentIndex);
+    updateProgress();
   </script>
 </body>
 </html>
