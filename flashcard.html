@@ -310,27 +310,56 @@
     /* ── Responsive ────────────────────────────────────────────────── */
 
     @media (max-width: 480px) {
-      .main { padding: 1.5rem 0.75rem; }
-
-      .card-scene { width: 100%; height: 220px; }
-
-      .card-telugu { font-size: 2.1rem; }
-
-      .card-face { padding: 1.5rem 1.2rem; }
-
-      .flip-btn { min-height: 44px; width: 100%; max-width: 260px; }
-
-      .rating-area { gap: 0.5rem; width: 100%; justify-content: center; }
-
-      .rate-btn {
-        padding: 0.6rem 0;
-        min-width: 0;
-        flex: 1;
-        max-width: 80px;
-        min-height: 52px;
+      .main {
+        justify-content: flex-start;
+        padding: 1.5rem 1rem 2rem;
       }
 
-      /* Prevent tap delay */
+      .review-stack {
+        width: 100%;
+        gap: 1.1rem;
+      }
+
+      .session-bar { font-size: 0.82rem; }
+
+      .card-scene {
+        width: 100%;
+        height: clamp(200px, 42vh, 270px);
+      }
+
+      .card-face { padding: 1.5rem 1.5rem; }
+
+      .card-telugu { font-size: 2.3rem; }
+
+      .card-hint { margin-top: 0.4rem; }
+
+      #flipArea { width: 100%; }
+
+      .flip-btn {
+        width: 100%;
+        max-width: none;
+        min-height: 50px;
+        font-size: 1rem;
+        border-radius: 8px;
+      }
+
+      .rating-area {
+        width: 100%;
+        gap: 0.5rem;
+      }
+
+      .rate-btn {
+        flex: 1;
+        min-width: 0;
+        max-width: none;
+        min-height: 58px;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.88rem;
+        border-radius: 8px;
+      }
+
+      .rate-interval { font-size: 0.66rem; }
+
       .flip-btn, .rate-btn, .card-scene, .theme-toggle, .nav-left {
         touch-action: manipulation;
       }
