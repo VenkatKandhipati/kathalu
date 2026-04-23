@@ -32,6 +32,8 @@
       --accent-gold: #c8a96e;
       --accent-green: #6b8f3a;
       --phonetic-color: #8a6000;
+      --meaning-color: #1a6b3a;
+      --meaning-bg: rgba(26, 107, 58, 0.08);
       --stats-label: #8a7a5a;
       --stats-border: #e2d9c8;
       --stats-section-border: #ece6d8;
@@ -60,6 +62,8 @@
       --accent-gold: #d4b478;
       --accent-green: #8ab450;
       --phonetic-color: #d4a830;
+      --meaning-color: #4ab870;
+      --meaning-bg: rgba(74, 184, 112, 0.1);
       --stats-label: #b0a080;
       --stats-border: #3a3530;
       --stats-section-border: #353025;
@@ -456,6 +460,25 @@
     }
 
     .phonetic.hidden { display: none; }
+
+    .meaning {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.52em;
+      font-family: Georgia, 'Times New Roman', serif;
+      color: var(--meaning-color);
+      background: var(--meaning-bg);
+      white-space: nowrap;
+      pointer-events: none;
+      line-height: 1;
+      padding: 1px 4px 2px;
+      border-radius: 3px;
+      letter-spacing: 0.02em;
+    }
+
+    .meaning.hidden { display: none; }
 
     /* ── Bottom Bar ──────────────────────────────────────────── */
 
@@ -950,15 +973,49 @@
     let currentIndex = getDailyStoryIndex();
     const dailyIndex = currentIndex;
 
-    function togglePhonetic(span, wordText) {
-      const ph = span.querySelector('.phonetic');
-      const wasHidden = ph.classList.contains('hidden');
-      ph.classList.toggle('hidden');
-      span.classList.toggle('active', !ph.classList.contains('hidden'));
+    async function fetchMeaning(wordText) {
+      const cards = JSON.parse(localStorage.getItem('vocabCards') || '{}');
+      if (cards[wordText]?.meaning) return cards[wordText].meaning;
 
-      if (wasHidden) {
+      try {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(wordText)}&langpair=te|en`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const meaning = (data?.responseData?.translatedText || '').toLowerCase();
+        if (meaning && cards[wordText]) {
+          cards[wordText].meaning = meaning;
+          localStorage.setItem('vocabCards', JSON.stringify(cards));
+        }
+        return meaning;
+      } catch {
+        return '';
+      }
+    }
+
+    async function cycleWordState(span, wordText) {
+      const ph = span.querySelector('.phonetic');
+      const mn = span.querySelector('.meaning');
+      const state = parseInt(span.dataset.clickState || '0');
+
+      if (state === 0) {
+        ph.classList.remove('hidden');
+        mn.classList.add('hidden');
+        span.classList.add('active');
+        span.dataset.clickState = '1';
         recordClick(wordText);
         span.classList.add('was-clicked');
+      } else if (state === 1) {
+        ph.classList.add('hidden');
+        mn.textContent = '…';
+        mn.classList.remove('hidden');
+        span.dataset.clickState = '2';
+        const meaning = await fetchMeaning(wordText);
+        mn.textContent = meaning || '—';
+      } else {
+        ph.classList.add('hidden');
+        mn.classList.add('hidden');
+        span.classList.remove('active');
+        span.dataset.clickState = '0';
       }
     }
 
@@ -969,12 +1026,18 @@
         if (/[\u0C00-\u0C7F]/.test(token)) {
           const span = document.createElement('span');
           span.className = 'word';
-          span.addEventListener('click', () => togglePhonetic(span, token));
+          span.dataset.clickState = '0';
+          span.addEventListener('click', () => cycleWordState(span, token));
 
           const label = document.createElement('span');
           label.className = 'phonetic hidden';
           label.textContent = transliterate(token);
           span.appendChild(label);
+
+          const meaning = document.createElement('span');
+          meaning.className = 'meaning hidden';
+          span.appendChild(meaning);
+
           span.appendChild(document.createTextNode(token));
           container.appendChild(span);
         } else {
@@ -1026,11 +1089,20 @@
 
     document.getElementById('toggleAllBtn').addEventListener('click', () => {
       allRevealed = !allRevealed;
-      document.querySelectorAll('.phonetic').forEach(ph => {
-        ph.classList.toggle('hidden', !allRevealed);
-      });
       document.querySelectorAll('.word').forEach(w => {
-        w.classList.toggle('active', allRevealed);
+        const ph = w.querySelector('.phonetic');
+        const mn = w.querySelector('.meaning');
+        if (allRevealed) {
+          ph.classList.remove('hidden');
+          mn.classList.add('hidden');
+          w.classList.add('active');
+          w.dataset.clickState = '1';
+        } else {
+          ph.classList.add('hidden');
+          mn.classList.add('hidden');
+          w.classList.remove('active');
+          w.dataset.clickState = '0';
+        }
       });
     });
 
