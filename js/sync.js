@@ -182,8 +182,11 @@ function installWriteInterceptor() {
 // detect per-card rating changes in the diff and send them to /cards/:id/rate
 // when the card has a server id known.
 
-async function hydrateLocalFromCloud() {
+const HYDRATE_KEY = "kathalu:hydrated";
+
+async function hydrateLocalFromCloud(force = false) {
   if (!(await isSignedIn())) return;
+  if (!force && sessionStorage.getItem(HYDRATE_KEY)) return;
 
   const [cardsMap, progress, streakData] = await Promise.all([
     getCards(),
@@ -191,8 +194,18 @@ async function hydrateLocalFromCloud() {
     api("/streak"),
   ]);
 
-  localStorage.setItem("vocabCards", JSON.stringify(cardsMap));
-  localStorage.setItem("storyProgress", JSON.stringify(progress));
+  // Only overwrite if cloud has data, or local is empty. This keeps freshly
+  // clicked words alive across navigations while the background POST is in
+  // flight.
+  const localCards = safeParse(localStorage.getItem("vocabCards"), {});
+  if (Object.keys(cardsMap).length > 0 || Object.keys(localCards).length === 0) {
+    localStorage.setItem("vocabCards", JSON.stringify(cardsMap));
+  }
+  const localProgress = safeParse(localStorage.getItem("storyProgress"), {});
+  if (Object.keys(progress).length > 0 || Object.keys(localProgress).length === 0) {
+    localStorage.setItem("storyProgress", JSON.stringify(progress));
+  }
+  sessionStorage.setItem(HYDRATE_KEY, "1");
 
   // readingDates: reconstruct last-N-days list so the streak UI works.
   // Server owns truth; fetch today's status implicitly via streak endpoint.
@@ -233,17 +246,18 @@ async function boot() {
   }
 
   sb.auth.onAuthStateChange(async (evt) => {
-    if (evt === "SIGNED_IN" || evt === "TOKEN_REFRESHED") {
+    if (evt === "SIGNED_IN") {
       try {
         await importLocalIfFirstLogin();
-        await hydrateLocalFromCloud();
+        sessionStorage.removeItem(HYDRATE_KEY);
+        await hydrateLocalFromCloud(true);
         window.dispatchEvent(new CustomEvent("kathalu:synced"));
       } catch (e) {
         console.warn("[kathalu sync] post-auth hydrate failed", e);
       }
     }
     if (evt === "SIGNED_OUT") {
-      // Keep local cache; user may sign back in later.
+      sessionStorage.removeItem(HYDRATE_KEY);
     }
   });
 }
