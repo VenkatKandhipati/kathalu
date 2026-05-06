@@ -21,20 +21,7 @@ primary_region = 'iad'
     hard_limit = 250
     soft_limit = 200
 
-[[services]]
-  protocol = 'tcp'
-  internal_port = 8000
-
-  [[services.ports]]
-    port = 80
-    handlers = ['http']
-    force_https = true
-
-  [[services.ports]]
-    port = 443
-    handlers = ['tls', 'http']
-
-  [[services.http_checks]]
+  [[http_service.checks]]
     interval = '30s'
     timeout = '5s'
     grace_period = '10s'

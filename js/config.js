@@ -4,7 +4,7 @@ export const CONFIG = Object.assign(
   {
     SUPABASE_URL: "https://cohsteoqoxnhehpsogqd.supabase.co",
     SUPABASE_ANON_KEY: "sb_publishable_YTVGfTVdIS9oO8dpTLdkDw_p4WbBqDl",
-    API_URL: "https://kathalu.fly.dev",
+    API_URL: "https://api.kathalu.me",
     EMAIL_DOMAIN: "kathalu.local",
   },
   window.KATHALU_CONFIG || {}
